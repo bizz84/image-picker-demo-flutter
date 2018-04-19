@@ -8,14 +8,15 @@
 
 import UIKit
 
-class ImagePicker: UIImagePickerController, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+class ImagePickerController: UIImagePickerController, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
   
   var handler: ((_ image: UIImage?) -> Void)?
   
-  convenience init(sourceType: UIImagePickerControllerSourceType) {
+  convenience init(sourceType: UIImagePickerControllerSourceType, handler: @escaping (_ image: UIImage?) -> Void) {
     self.init()
     self.sourceType = sourceType
     self.delegate = self
+    self.handler = handler
   }
   
   func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
@@ -36,19 +37,15 @@ class FlutterChannelManager: NSObject, UINavigationControllerDelegate, UIImagePi
   init(flutterViewController: FlutterViewController) {
     
     self.flutterViewController = flutterViewController
-    channel = FlutterMethodChannel(name: "com.musevisions.camera/capture", binaryMessenger: flutterViewController)
+    channel = FlutterMethodChannel(name: "com.musevisions.flutter/imagePicker", binaryMessenger: flutterViewController)
   }
   
   func setup() {
     channel.setMethodCallHandler { (call, result) in
       switch call.method {
-      case "takePicture":
-        //call.arguments // check input
-        let imagePicker = ImagePicker(sourceType: .photoLibrary)
-        imagePicker.handler = { image in
-          imagePicker.dismiss(animated: true, completion: nil)
-          result(self.flutterImageResult(image))
-        }
+      case "pickImage":
+        let sourceType: UIImagePickerControllerSourceType = "camera" == (call.arguments as? String) ? .camera : .photoLibrary
+        let imagePicker = self.buildImagePicker(sourceType: sourceType, completion: result)
         self.flutterViewController.present(imagePicker, animated: true, completion: nil)
       default:
         break
@@ -56,28 +53,37 @@ class FlutterChannelManager: NSObject, UINavigationControllerDelegate, UIImagePi
     }
   }
   
-  private func flutterImageResult(_ image: UIImage?) -> [String: Any] {
-    guard let image = image else {
-      return ["error": "user did cancel"]
+  func buildImagePicker(sourceType: UIImagePickerControllerSourceType, completion: @escaping (_ result: Any?) -> Void) -> UIViewController {
+    if sourceType == .camera && !UIImagePickerController.isSourceTypeAvailable(.camera) {
+      let alert = UIAlertController(title: "Error", message: "Camera not available", preferredStyle: .alert)
+      alert.addAction(UIAlertAction(title: "OK", style: .default) { action in
+        completion(FlutterError(code: "camera_unavailable", message: "camera not available", details: nil))
+      })
+      return alert
+    } else {
+      return ImagePickerController(sourceType: sourceType) { image in
+        self.flutterViewController.dismiss(animated: true, completion: nil)
+        if let image = image {
+          completion(self.saveToFile(image: image))
+        } else {
+          completion(FlutterError(code: "user_cancelled", message: "User did cancel", details: nil))
+        }
+      }
     }
-    guard let data = FlutterStandardTypedData(image: image) else {
-      return ["error": "could not read image"]
-    }
-    return [
-      "data": data,
-      "width": image.size.width,
-      "height": image.size.height,
-      "scale": image.scale
-    ]
   }
-}
-
-extension FlutterStandardTypedData {
-  convenience init?(image: UIImage) {
+  
+  private func saveToFile(image: UIImage) -> Any {
     guard let data = UIImageJPEGRepresentation(image, 1.0) else {
-      return nil
+      return FlutterError(code: "image_encoding_error", message: "Could not read image", details: nil)
     }
-    self.init(bytes: data)
+    let tempDir = NSTemporaryDirectory()
+    let imageName = "image_picker_\(ProcessInfo().globallyUniqueString).jpg"
+    let filePath = tempDir.appending(imageName)
+    if FileManager.default.createFile(atPath: filePath, contents: data, attributes: nil) {
+      return filePath
+    } else {
+      return FlutterError(code: "image_save_failed", message: "Could not save image to disk", details: nil)
+    }
   }
 }
 

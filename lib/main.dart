@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'image_picker_channel.dart';
@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
       theme: new ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: new MyHomePage(title: 'Flutter Demo Home Page'),
+      home: new MyHomePage(title: 'Image Picker Demo'),
     );
   }
 }
@@ -33,29 +33,25 @@ class _MyHomePageState extends State<MyHomePage> {
 
   ImagePicker _imagePicker = new ImagePickerChannel();
 
-  Map<dynamic, dynamic> _imageData;
+  File _imageFile;
 
-  void captureImage(ImageCaptureMode captureMode) async {
-    var imageData = await _imagePicker.captureImage(captureMode: captureMode);
-    setState(() {
-      _imageData = imageData;
-    });
+  void captureImage(ImageSource captureMode) async {
+    try {
+      var imageFile = await _imagePicker.pickImage(captureMode: captureMode);
+      setState(() {
+        _imageFile = imageFile;
+      });
+    }
+    catch (e) {
+      print(e);
+    }
   }
 
   Widget _buildImage() {
-    if (_imageData != null) {
-      if (_imageData['data'] != null) {
-        return new Image.memory(
-            _imageData['data'],
-            scale: _imageData['scale'],
-            width: _imageData['width'],
-            height: _imageData['height']
-        );
-      } else {
-        return new Text(_imageData['error']);
-      }
+    if (_imageFile != null) {
+      return new Image.file(_imageFile);
     } else {
-      return new Text('Take an image to start');
+      return new Text('Take an image to start', style: new TextStyle(fontSize: 18.0));
     }
   }
 
@@ -65,14 +61,38 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: new AppBar(
         title: new Text(widget.title),
       ),
-      body: new Center(
-        child: _buildImage(),
+      body: new Column(
+        children: [
+          new Expanded(child: new Center(child: _buildImage())),
+          _buildButtons()
+        ]
       ),
-      floatingActionButton: new FloatingActionButton(
-        onPressed: () => captureImage(ImageCaptureMode.photos),
-        tooltip: 'Increment',
-        child: new Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+
+
+  Widget _buildButtons() {
+    return new ConstrainedBox(
+      constraints: BoxConstraints.expand(height: 80.0),
+      child: new Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: <Widget>[
+          _buildActionButton(new Key('retake'), 'Photos', () => captureImage(ImageSource.photos)),
+          _buildActionButton(new Key('upload'), 'Camera', () => captureImage(ImageSource.camera)),
+        ]
+      ));
+  }
+
+  Widget _buildActionButton(Key key, String text, Function onPressed) {
+    return new Expanded(
+      child: new FlatButton(
+          key: key,
+          child: new Text(text, style: new TextStyle(fontSize: 20.0)),
+          shape: new RoundedRectangleBorder(),
+          color: Colors.blueAccent,
+          textColor: Colors.white,
+          onPressed: onPressed),
     );
   }
 }

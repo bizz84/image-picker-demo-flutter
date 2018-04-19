@@ -15,7 +15,6 @@ import Flutter
     guard let controller = window.rootViewController as? FlutterViewController else {
       fatalError("Invalid root view controller")
     }
-    
     flutterChannelManager = FlutterChannelManager(flutterViewController: controller)
     flutterChannelManager.setup()
     

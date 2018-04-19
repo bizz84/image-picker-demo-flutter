@@ -1,36 +1,38 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-enum ImageCaptureMode {
+enum ImageSource {
   photos,
   camera
 }
 
-String _stringCaptureMode(ImageCaptureMode captureMode) {
-  switch (captureMode) {
-    case ImageCaptureMode.photos:
-      return 'photos';
-    case ImageCaptureMode.camera:
-      return 'camera';
+String _stringImageSource(ImageSource imageSource) {
+  switch (imageSource) {
+    case ImageSource.photos: return 'photos';
+    case ImageSource.camera: return 'camera';
   }
 }
 
 abstract class ImagePicker {
-  Future<dynamic> captureImage({ImageCaptureMode captureMode});
+  Future<File> pickImage({ImageSource imageSource});
 }
 
 class ImagePickerChannel implements ImagePicker {
 
-  static const platform = const MethodChannel('com.musevisions.camera/capture');
+  static const platform = const MethodChannel('com.musevisions.flutter/imagePicker');
 
-  Future<dynamic> captureImage({ImageCaptureMode captureMode}) async {
+  Future<File> pickImage({ImageSource imageSource}) async {
 
-    try {
-      var captureModeString = _stringCaptureMode(captureMode);
-      return await platform.invokeMethod('takePicture', captureModeString);
-    } on PlatformException catch (e) {
-      print(e);
+    var stringImageSource = _stringImageSource(imageSource);
+    var result = await platform.invokeMethod('pickImage', stringImageSource);
+    if (result is String) {
+      return new File(result);
+    } else if (result is FlutterError) {
+      throw result;
     }
+    return null;
   }
 }
