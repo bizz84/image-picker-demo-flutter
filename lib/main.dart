@@ -3,18 +3,17 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'image_picker_channel.dart';
 
-void main() => runApp(new MyApp());
+void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(
+    return MaterialApp(
       title: 'Flutter Demo',
-      theme: new ThemeData(
+      theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: new MyHomePage(title: 'Image Picker Demo'),
+      home: MyHomePage(title: 'Image Picker Demo'),
     );
   }
 }
@@ -25,76 +24,77 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  _MyHomePageState createState() => new _MyHomePageState();
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
-
 class _MyHomePageState extends State<MyHomePage> {
-
-  ImagePicker _imagePicker = new ImagePickerChannel();
+  final ImagePicker _imagePicker = ImagePickerChannel();
 
   File _imageFile;
 
-  void captureImage(ImageSource captureMode) async {
+  Future<void> captureImage(ImageSource imageSource) async {
     try {
-      var imageFile = await _imagePicker.pickImage(captureMode: captureMode);
+      final imageFile = await _imagePicker.pickImage(imageSource: imageSource);
       setState(() {
         _imageFile = imageFile;
       });
-    }
-    catch (e) {
+    } catch (e) {
       print(e);
     }
   }
 
   Widget _buildImage() {
     if (_imageFile != null) {
-      return new Image.file(_imageFile);
+      return Image.file(_imageFile);
     } else {
-      return new Text('Take an image to start', style: new TextStyle(fontSize: 18.0));
+      return Text('Take an image to start', style: TextStyle(fontSize: 18.0));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
-      appBar: new AppBar(
-        title: new Text(widget.title),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
       ),
-      body: new Column(
+      body: Column(
         children: [
-          new Expanded(child: new Center(child: _buildImage())),
-          _buildButtons()
-        ]
+          Expanded(child: Center(child: _buildImage())),
+          _buildButtons(),
+        ],
       ),
     );
   }
 
-
   Widget _buildButtons() {
-    return new ConstrainedBox(
-      constraints: BoxConstraints.expand(height: 80.0),
-      child: new Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: <Widget>[
-          _buildActionButton(new Key('retake'), 'Photos', () => captureImage(ImageSource.photos)),
-          _buildActionButton(new Key('upload'), 'Camera', () => captureImage(ImageSource.camera)),
-        ]
-      ));
+    return ConstrainedBox(
+        constraints: BoxConstraints.expand(height: 80.0),
+        child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: <Widget>[
+              _buildActionButton(
+                key: Key('retake'),
+                text: 'Photos',
+                onPressed: () => captureImage(ImageSource.photos),
+              ),
+              _buildActionButton(
+                key: Key('upload'),
+                text: 'Camera',
+                onPressed: () => captureImage(ImageSource.camera),
+              ),
+            ]));
   }
 
-  Widget _buildActionButton(Key key, String text, Function onPressed) {
-    return new Expanded(
-      child: new FlatButton(
+  Widget _buildActionButton({Key key, String text, Function onPressed}) {
+    return Expanded(
+      child: FlatButton(
           key: key,
-          child: new Text(text, style: new TextStyle(fontSize: 20.0)),
-          shape: new RoundedRectangleBorder(),
+          child: Text(text, style: TextStyle(fontSize: 20.0)),
+          shape: RoundedRectangleBorder(),
           color: Colors.blueAccent,
           textColor: Colors.white,
           onPressed: onPressed),
     );
   }
 }
-
-

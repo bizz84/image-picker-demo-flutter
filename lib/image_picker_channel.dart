@@ -4,16 +4,16 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-enum ImageSource {
-  photos,
-  camera
-}
+enum ImageSource { photos, camera }
 
 String _stringImageSource(ImageSource imageSource) {
   switch (imageSource) {
-    case ImageSource.photos: return 'photos';
-    case ImageSource.camera: return 'camera';
+    case ImageSource.photos:
+      return 'photos';
+    case ImageSource.camera:
+      return 'camera';
   }
+  return null;
 }
 
 abstract class ImagePicker {
@@ -21,15 +21,14 @@ abstract class ImagePicker {
 }
 
 class ImagePickerChannel implements ImagePicker {
-
-  static const platform = const MethodChannel('com.musevisions.flutter/imagePicker');
+  static const platform =
+      const MethodChannel('com.musevisions.flutter/imagePicker');
 
   Future<File> pickImage({ImageSource imageSource}) async {
-
-    var stringImageSource = _stringImageSource(imageSource);
-    var result = await platform.invokeMethod('pickImage', stringImageSource);
+    final stringImageSource = _stringImageSource(imageSource);
+    final result = await platform.invokeMethod('pickImage', stringImageSource);
     if (result is String) {
-      return new File(result);
+      return File(result);
     } else if (result is FlutterError) {
       throw result;
     }
