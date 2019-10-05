@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'image_picker_channel.dart';
+import 'package:image_picker/image_picker.dart';
 
 void main() => runApp(MyApp());
 
@@ -28,13 +28,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final ImagePicker _imagePicker = ImagePickerChannel();
+  //final ImagePicker _imagePicker = ImagePickerChannel();
 
   File _imageFile;
 
   Future<void> captureImage(ImageSource imageSource) async {
     try {
-      final imageFile = await _imagePicker.pickImage(imageSource: imageSource);
+      final imageFile = await ImagePicker.pickImage(source: imageSource);
       setState(() {
         _imageFile = imageFile;
       });
@@ -76,7 +76,7 @@ class _MyHomePageState extends State<MyHomePage> {
               _buildActionButton(
                 key: Key('retake'),
                 text: 'Photos',
-                onPressed: () => captureImage(ImageSource.photos),
+                onPressed: () => captureImage(ImageSource.gallery),
               ),
               _buildActionButton(
                 key: Key('upload'),
